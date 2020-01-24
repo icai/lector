@@ -11,6 +11,8 @@ const { buildMenuTemplate } = require('./menutemplate');
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let win, aboutWin;
+var ready = false;
+global.fileToOpen = null;
 
 function createWindow() {
     // Create the browser window.
@@ -24,11 +26,25 @@ function createWindow() {
             plugins: true,
             nodeIntegration: true
         },
-        frame: false
+        
+        frame: true
     });
+
+    // win.openDevTools();
+
 
     // and load the index.html of the app.
     win.loadFile('./src/index.html');
+
+   
+
+
+    win.webContents.on('did-finish-load', function() {
+        if (fileToOpen) {
+            win.webContents.send('file-open', fileToOpen);
+            fileToOpen = null;
+        }
+    });
 
     // Emitted when the window is closed.
     win.on('closed', () => {
@@ -77,6 +93,8 @@ function createWindow() {
         menu.getMenuItemById('view-fullscreen').enabled = flag;
     });
 
+    ready = true;
+
 }
 
 // Allow only a single instance of the app
@@ -96,6 +114,20 @@ if (!gotTheLock) {
         }
     });
 
+    
+
+    app.on('open-file', (event, filePath) => {
+        event.preventDefault();
+        fileToOpen = filePath;
+        if (ready) {
+            win.webContents.send('file-open', fileToOpen);
+            fileToOpen = null;
+    
+            return;
+        }
+    });
+
+
     // This method will be called when Electron has finished
     // initialization and is ready to create browser windows.
     // Some APIs can only be used after this event occurs.
@@ -107,6 +139,7 @@ if (!gotTheLock) {
         // to stay active until the user quits explicitly with Cmd + Q
         if (process.platform !== 'darwin') {
             app.quit();
+            ready = false;
         }
     });
 

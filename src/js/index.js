@@ -8,7 +8,28 @@
 (function () {
 
     const { ipcRenderer, remote } = require('electron');
-    const customTitlebar = require('custom-electron-titlebar');
+
+    const config = { isWin: false, isOsX:false, isNix:false };
+
+    const appVer = navigator.appVersion;
+    if      (appVer.indexOf("Win")!=-1)   config.isWin = true;
+    else if (appVer.indexOf("Mac")!=-1)   config.isOsX = true;
+    else if (appVer.indexOf("X11")!=-1)   config.isNix = true;
+    else if (appVer.indexOf("Linux")!=-1) config.isNix = true;
+
+    function getPathSeparator(){
+        if(config.isWin){
+            return '\\';
+        }
+        else if(config.isOsx  || config.isNix){
+            return '/';
+        }
+        // default to *nix system.
+        return '/';
+    }
+
+
+    // const customTitlebar = require('custom-electron-titlebar');
 
     /**
      * @desc Main view class containing all rendering and
@@ -31,7 +52,7 @@
             this._computeStepTabs();
 
             // Title bar object
-            this._titleBar = this._getTitleBar();
+            // this._titleBar = this._getTitleBar();
 
             this._tabContainer = document.getElementById('tabContainer');
             this._viewerElement = document.getElementById('viewer');
@@ -50,12 +71,15 @@
         /**
          * @returns custom title bar object
          */
-        _getTitleBar() {
-            return new customTitlebar.Titlebar({
-                backgroundColor: customTitlebar.Color.fromHex('#333'),
-                icon: 'assets/images/logo.png'
-            });
-        }
+        // _getTitleBar() {
+        //     return new customTitlebar.Titlebar({
+        //         backgroundColor: customTitlebar.Color.fromHex('#333'),
+        //         icon: 'assets/images/logo.png',
+        //         maximizable: true,
+        //         closeable: true,
+        //         minimizable: true
+        //     });
+        // }
 
         /**
          * @desc Appends tabs at bucketPosition to tabContainer
@@ -136,7 +160,7 @@
          * @param {*} pathName
          */
         _createTabElement(pathName) {
-            const filename = pathName.substring(pathName.lastIndexOf('\\') + 1);
+            const filename = pathName.substring(pathName.lastIndexOf(getPathSeparator()) + 1);
             const tabElement = document.createElement('div');
             const labelElement = document.createElement('div');
             const closeElement = document.createElement('div');
@@ -337,10 +361,11 @@
          */
         _updateTitle(pathName) {
             if (pathName) {
-                this._titleBar.updateTitle(pathName.substring(
-                    pathName.lastIndexOf('\\') + 1) + " - Lector");
+
+                document.title = pathName.substring(
+                    pathName.lastIndexOf(getPathSeparator()) + 1) + " - Lector";
             } else {
-                this._titleBar.updateTitle("Lector");
+                document.title = "Lector"
             }
         }
 
